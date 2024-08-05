@@ -1,6 +1,6 @@
 /**
  * Combines data from a specified column across all sheets
- * whose names start with 'FY'. 
+ * whose names start with 'FY'.
  *
  * @param {string} columnLetter - The letter of the column to combine.
  * @returns {Array} - An array containing combined data from the specified column.
@@ -10,22 +10,22 @@ function getCombinedColumn(columnLetter) {
   var sheets = ss.getSheets(); // Get all sheets in the spreadsheet
   var combinedData = []; // Initialize an array to store combined data
 
-// Ensure columnLetter is always defined
-columnLetter = columnLetter || 'A';
-Logger.log("Column Letter: " + columnLetter);
+  // Ensure columnLetter is always defined
+  columnLetter = columnLetter || 'A';
+  Logger.log("Column letter: " + columnLetter);
 
-// Iterate through each sheet in the spreadsheet
-for (var i = 0; i < sheets.length; i++) {
+  // Iterate through each sheet in the spreadsheet
+  for (var i = 0; i < sheets.length; i++) {
     var sheet = sheets[i];
     var sheetName = sheet.getName();
     
-// Check if the sheet name starts with 'FY'
-if (sheetName.startsWith('FY')) {
+    // Check if the sheet name starts with 'FY'
+    if (sheetName.startsWith('FY')) {
       var lastRow = sheet.getLastRow(); // Get the last row with data in the sheet
       Logger.log("Processing sheet: " + sheetName + ", lastRow: " + lastRow);
       
-  // Ensure there's data beyond the header row
-  if (lastRow > 1) {
+      // Ensure there's data beyond the header row
+      if (lastRow > 1) {
         try {
           // Log the range string
           var rangeStr = columnLetter + '2:' + columnLetter + lastRow;
@@ -48,6 +48,8 @@ if (sheetName.startsWith('FY')) {
         // Log a message if the sheet has no data beyond the header row
         Logger.log("Sheet " + sheetName + " has no data beyond the header row.");
       }
+    } else {
+      Logger.log("Skipping sheet: " + sheetName + " (does not start with 'FY')");
     }
   }
   
@@ -57,7 +59,7 @@ if (sheetName.startsWith('FY')) {
 }
 
 /**
- * Clears the content of the TRANSFORM tab from row 2 down before updating.
+ * Clears the content of the TRANSFORM tab from row 2 downwards before updating.
  *
  * @param {string} columnLetter - The letter of the column to combine.
  */
@@ -65,19 +67,17 @@ function updateTransformTab(columnLetter) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var transformSheet = ss.getSheetByName('TRANSFORM'); // Get the TRANSFORM tab
   var lastRow = transformSheet.getLastRow();
+  
+  // Clear existing content from row 2 onwards, from column A to Z
+  transformSheet.getRange('A2:Z' + lastRow).clearContent();
 
-// Clear existing content from row 2 and below, columns A to Z
-transformSheet.getRange('A2:Z' + lastRow).clearContent();
+  var combinedData = getCombinedColumn(columnLetter); // Get combined data from FY tabs
 
-var combinedData = getCombinedColumn(columnLetter); // Get combined data from FY tabs
-
-//Clear content in specified column before updating
-transformSheet.getRange(columnLetter + '2:' + columnLetter + lastRow.clearContent();
-
+  // Update TRANSFORM tab with combined data
   for (var i = 0; i < combinedData.length; i++) {
-    transformSheet.getRange(columnLetter + (i + 2)).setValue(combinedData[i]); // Update TRANSFORM tab
+    transformSheet.getRange(columnLetter + (i + 2)).setValue(combinedData[i]);
   }
-
-// Log the final update status
-Logger.log("Updated TRANSFORM tab with new data.");
+  
+  // Log the final update status
+  Logger.log("Updated TRANSFORM tab with new data.");
 }
