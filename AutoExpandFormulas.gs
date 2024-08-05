@@ -10,20 +10,24 @@ function getCombinedColumn(columnLetter) {
   var sheets = ss.getSheets(); // Get all sheets in the spreadsheet
   var combinedData = []; // Initialize an array to store combined data
 
-  // Iterate through each sheet in the spreadsheet
-  for (var i = 0; i < sheets.length; i++) {
+// Ensure columnLetter is always defined
+columnLetter = columnLetter || 'A';
+Logger.log("Column Letter: " + columnLetter);
+
+// Iterate through each sheet in the spreadsheet
+for (var i = 0; i < sheets.length; i++) {
     var sheet = sheets[i];
     var sheetName = sheet.getName();
     
-    // Check if the sheet name starts with 'FY'
-    if (sheetName.startsWith('FY')) {
+// Check if the sheet name starts with 'FY'
+if (sheetName.startsWith('FY')) {
       var lastRow = sheet.getLastRow(); // Get the last row with data in the sheet
       Logger.log("Processing sheet: " + sheetName + ", lastRow: " + lastRow);
       
-      // Ensure there's data beyond the header row
-      if (lastRow > 1) {
+  // Ensure there's data beyond the header row
+  if (lastRow > 1) {
         try {
-          // Construct the range string
+          // Log the range string
           var rangeStr = columnLetter + '2:' + columnLetter + lastRow;
           Logger.log("Range string: " + rangeStr);
           
@@ -50,4 +54,23 @@ function getCombinedColumn(columnLetter) {
   // Log the combined data for debugging purposes
   Logger.log("Combined Data: " + combinedData.join(", "));
   return combinedData; // Return the combined data
+}
+
+/**
+ * Clears the content of the TRANSFORM tab from row 2 down before updating.
+ *
+ * @param {string} columnLetter - The letter of the column to combine.
+ */
+function updateTransformTab(columnLetter) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var transformSheet = ss.getSheetByName('TRANSFORM'); // Get the TRANSFORM tab
+  var lastRow = transformSheet.getLastRow();
+
+// Clear existing content from row 2 and below, columns A to Z
+transformSheet.getRange('A2:Z' + lastRow).clearContent();
+
+var combinedData = getCombinedColumn(columnLetter); // Get combined data from FY tabs
+  for (var i = 0; i < combinedData.length; i++) {
+    transformSheet.getRange(columnLetter + (i + 2)).setValue(combinedData[i]); // Update TRANSFORM tab
+  }
 }
