@@ -70,7 +70,14 @@ function updateTransformTab(columnLetter) {
 transformSheet.getRange('A2:Z' + lastRow).clearContent();
 
 var combinedData = getCombinedColumn(columnLetter); // Get combined data from FY tabs
+
+//Clear content in specified column before updating
+transformSheet.getRange(columnLetter + '2:' + columnLetter + lastRow.clearContent();
+
   for (var i = 0; i < combinedData.length; i++) {
     transformSheet.getRange(columnLetter + (i + 2)).setValue(combinedData[i]); // Update TRANSFORM tab
   }
+
+// Log the final update status
+Logger.log("Updated TRANSFORM tab with new data.");
 }
