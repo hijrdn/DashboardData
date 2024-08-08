@@ -1,11 +1,16 @@
 /**
  * Combines data from a specified column across all sheets
- * whose names start with 'FY'. 
+ * whose names start with 'FY'.
  *
  * @param {string} columnLetter - The letter of the column to combine.
  * @returns {Array} - An array containing combined data from the specified column.
  */
+
 function getCombinedColumn(columnLetter) {
+  // Use a default column letter if none is provided
+  columnLetter = columnLetter || 'A';
+  Logger.log("Column letter: " + columnLetter);
+
   var ss = SpreadsheetApp.getActiveSpreadsheet(); // Get the active spreadsheet
   var sheets = ss.getSheets(); // Get all sheets in the spreadsheet
   var combinedData = []; // Initialize an array to store combined data
@@ -44,10 +49,35 @@ function getCombinedColumn(columnLetter) {
         // Log a message if the sheet has no data beyond the header row
         Logger.log("Sheet " + sheetName + " has no data beyond the header row.");
       }
+    } else {
+      Logger.log("Skipping sheet: " + sheetName + " (does not start with 'FY')");
     }
   }
   
   // Log the combined data for debugging purposes
   Logger.log("Combined Data: " + combinedData.join(", "));
   return combinedData; // Return the combined data
+}
+
+/**
+ * Clears the content of the TRANSFORM tab from row 2 downwards before updating it.
+ *
+ * @param {string} columnLetter - The letter of the column to combine.
+ */
+function updateTransformTab(columnLetter) {
+  // Use a default column letter if none is provided
+  columnLetter = columnLetter || 'A';
+  Logger.log("Updating TRANSFORM tab with column letter: " + columnLetter);
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var transformSheet = ss.getSheetByName('TRANSFORM'); // Get the TRANSFORM tab
+  var lastRow = transformSheet.getLastRow();
+  transformSheet.getRange('A2:Z' + lastRow).clearContent(); // Clear existing content from row 2 onwards
+
+  var combinedData = getCombinedColumn(columnLetter); // Get combined data from FY tabs
+  for (var i = 0; i < combinedData.length; i++) {
+    transformSheet.getRange(columnLetter + (i + 2)).setValue(combinedData[i]); // Update TRANSFORM tab
+  }
+
+  Logger.log("Updated TRANSFORM tab with new data.");
 }
