@@ -5,15 +5,14 @@
  * @param {string} columnLetter - The letter of the column to combine.
  * @returns {Array} - An array containing combined data from the specified column.
  */
-
 function getCombinedColumn(columnLetter) {
-  // Use a default column letter if none is provided
-  columnLetter = columnLetter || 'A';
-  Logger.log("Column letter: " + columnLetter);
-
   var ss = SpreadsheetApp.getActiveSpreadsheet(); // Get the active spreadsheet
   var sheets = ss.getSheets(); // Get all sheets in the spreadsheet
   var combinedData = []; // Initialize an array to store combined data
+
+  // Ensure columnLetter is always defined
+  columnLetter = columnLetter || 'A';
+  Logger.log("Column letter: " + columnLetter);
 
   // Iterate through each sheet in the spreadsheet
   for (var i = 0; i < sheets.length; i++) {
@@ -28,19 +27,24 @@ function getCombinedColumn(columnLetter) {
       // Ensure there's data beyond the header row
       if (lastRow > 1) {
         try {
-          // Construct the range string
+          // Log the range string
           var rangeStr = columnLetter + '2:' + columnLetter + lastRow;
           Logger.log("Range string: " + rangeStr);
           
           // Get the range of data
           var range = sheet.getRange(rangeStr);
-          // Get values from the range, flatten the array, and filter out empty values
-          var values = range.getValues().flat().filter(function(value) {
-            return value !== '';
-          });
+          // Get values from the range
+          var values = range.getValues();
           
-          // Concatenate the values to the combinedData array
-          combinedData = combinedData.concat(values);
+          // Filter out rows that are completely empty
+          values = values.filter(function(row) {
+            return row.some(function(cell) {
+              return cell !== '';
+            });
+          });
+
+          // Flatten the filtered array and concatenate the values to the combinedData array
+          combinedData = combinedData.concat(values.flat());
         } catch (e) {
           // Log an error message if there's an issue getting the range
           Logger.log("Error getting range from sheet: " + sheetName + " - " + e.message);
@@ -60,24 +64,46 @@ function getCombinedColumn(columnLetter) {
 }
 
 /**
- * Clears the content of the TRANSFORM tab from row 2 downwards before updating it.
- *
- * @param {string} columnLetter - The letter of the column to combine.
+ * Clears the content of the TRANSFORM tab from row 2 downwards, except for columns K and L,
+ * sets formulas in A2 to Q2 (skipping K2 and L2), and then updates it with combined data.
  */
-function updateTransformTab(columnLetter) {
-  // Use a default column letter if none is provided
-  columnLetter = columnLetter || 'A';
-  Logger.log("Updating TRANSFORM tab with column letter: " + columnLetter);
-
+function updateTransformTab() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var transformSheet = ss.getSheetByName('TRANSFORM'); // Get the TRANSFORM tab
   var lastRow = transformSheet.getLastRow();
-  transformSheet.getRange('A2:Z' + lastRow).clearContent(); // Clear existing content from row 2 onwards
-
-  var combinedData = getCombinedColumn(columnLetter); // Get combined data from FY tabs
-  for (var i = 0; i < combinedData.length; i++) {
-    transformSheet.getRange(columnLetter + (i + 2)).setValue(combinedData[i]); // Update TRANSFORM tab
+  
+  // Step 1: Clear existing content from row 2 onwards, from column A to Z, except for columns K and L
+  var columnsToClear = 'ABCDEFGHIJMNOPQRSTUVWXYZ'.split('');
+  for (var i = 0; i < columnsToClear.length; i++) {
+    var columnLetter = columnsToClear[i];
+    transformSheet.getRange(columnLetter + '2:' + columnLetter + lastRow).clearContent();
   }
+  Logger.log("Cleared content in TRANSFORM tab from row 2 onwards, except for columns K and L.");
 
+  // Step 2: Place formulas in A2 to Q2, skipping K2 and L2
+  var columnLetters = {
+    'A': 'O',  // Column A in TRANSFORM will use column A in FY tabs
+    'B': 'P',  // Column B in TRANSFORM will use column B in FY tabs
+    'C': 'V',  // Column C in TRANSFORM will use column C in FY tabs
+    'D': 'W',  // Column D in TRANSFORM will use column D in FY tabs
+    'E': 'Q',  // Column E in TRANSFORM will use column E in FY tabs
+    'F': 'R',  // Column F in TRANSFORM will use column F in FY tabs
+    'G': 'S',  // Column G in TRANSFORM will use column G in FY tabs
+    'H': 'T',  // Column H in TRANSFORM will use column H in FY tabs
+    'J': 'AC',  // Column J in TRANSFORM will use column J in FY tabs
+    'M': 'X',  // Column M in TRANSFORM will use column M in FY tabs
+    'N': 'Y',  // Column N in TRANSFORM will use column N in FY tabs
+    'O': 'Z',  // Column O in TRANSFORM will use column O in FY tabs
+    'P': 'AA',  // Column P in TRANSFORM will use column P in FY tabs
+    'Q': 'AD'   // Column Q in TRANSFORM will use column Q in FY tabs
+  };
+
+  for (var column in columnLetters) {
+    var formula = '=ARRAYFORMULA(getCombinedColumn("' + columnLetters[column] + '"))';
+    transformSheet.getRange(column + '2').setFormula(formula);
+  }
+  Logger.log("Placed formulas in A2 to Q2, skipping K2 and L2.");
+
+  // Step 3: Log final update status
   Logger.log("Updated TRANSFORM tab with new data.");
 }
